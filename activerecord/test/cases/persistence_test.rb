@@ -249,6 +249,32 @@ class PersistenceTest < ActiveRecord::TestCase
     assert_nothing_raised { topic.save }
   end
 
+  def test_upsert_by_with_existing_record
+    new_topic = Topic.create("id" => 10, "title" => "Original Topic")
+    existing_topic = Topic.upsert_by(id: 10) do |t|
+      t.title = "Modified Topic"
+    end
+    assert_equal("Modified Topic", existing_topic.title)
+    assert_equal("Modified Topic", new_topic.reload.title)
+    assert_equal("Modified Topic", Topic.find(10).title)
+  end
+
+  def test_upsert_by_with_new_record
+    new_topic = Topic.upsert_by(id: 10) do |t|
+      t.title = "New Topic"
+    end
+    assert_equal("New Topic", new_topic.title)
+    assert_equal("New Topic", Topic.find(10).title)
+  end
+
+  def test_upsert_by_bang_with_valid_record
+    assert_nothing_raised do
+      Topic.upsert_by(id: 10) do |t|
+        t.title = "New Topic"
+      end
+    end
+  end
+
   def test_create_through_factory_with_block
     topic = Topic.create("title" => "New Topic") do |t|
       t.author_name = "David"

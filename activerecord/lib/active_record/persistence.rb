@@ -36,6 +36,28 @@ module ActiveRecord
         end
       end
 
+      # Finds the first record with the given attributes, or creates a record with the attributes if one
+      # is not found. The new or existing record is yielded to the given block and then saved. This is
+      # done within a single transaction.
+      #
+      # Returns the record.
+      #
+      # ==== Examples
+      #   # Update a record only if any of the given attributes are different or the record doesn't exist.
+      #   Role.upsert(id: 1) do |admin|
+      #     admin.name = "Administrator"
+      #     admin.description = "Site-wide system administrators"
+      #     admin.super_user = true
+      #   end
+      def upsert_by(attributes, &block)
+        upsert_record(attributes, :save, &block)
+      end
+
+      # Like <tt>upsert_by</tt>, but calls <tt>create!</tt> so an exception is raised if the record is invalid.
+      def upsert_by!(attributes, &block)
+        upsert_record(attributes, :save!, &block)
+      end
+
       # Given an attributes hash, +instantiate+ returns a new instance of
       # the appropriate class.
       #
@@ -60,6 +82,18 @@ module ActiveRecord
         # the single-table inheritance discriminator.
         def discriminate_class_for_record(record)
           self
+        end
+
+        # Finds or creates a record with values matching the given attributes, yields
+        # that record to the given block to allow merging of attributes, and calls
+        # the given finalizer method on the record.
+        def upsert_record(attributes, finalizer, &block)
+          transaction do
+            find_or_initialize_by(attributes).tap do |object|
+              block.call(object)
+              object.public_send(finalizer)
+            end
+          end
         end
     end
 

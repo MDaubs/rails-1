@@ -77,6 +77,14 @@ class ValidationsTest < ActiveRecord::TestCase
     end
   end
 
+  def test_exception_on_upsert_by_bang
+    assert_raise(ActiveRecord::RecordInvalid) do
+      WrongReply.upsert_by!({ "title" => "OK" }) do |r|
+        r.content = nil
+      end
+    end
+  end
+
   def test_exception_on_create_bang_many_with_block
     assert_raise(ActiveRecord::RecordInvalid) do
       WrongReply.create!([{ "title" => "OK" }, { "title" => "Wrong Create" }]) do |r|

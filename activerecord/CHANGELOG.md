@@ -1,3 +1,21 @@
+*   Add `upsert_by` and `upsert_by!` methods for updating or inserting a record
+    only when required in one operation.
+
+    Before:
+
+      User.find_or_initialize_by(id: 1).tap do |u|
+        u.name = "Built-in Superuser"
+        u.save!
+      end
+
+    After:
+
+      User.upsert_by!(id: 1) do |u|
+        u.name = "Built-in Superuser"
+      end
+
+    *Matthew Daubert*
+
 *   Fail early with "Primary key not included in the custom select clause"
     in `find_in_batches`.
 
